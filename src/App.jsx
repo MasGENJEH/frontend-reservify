@@ -12,7 +12,12 @@ import apiClient from './api/client';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState(() => {
-    const path = window.location.pathname.replace('/', '');
+    const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+    let path = window.location.pathname;
+    if (basePath && path.startsWith(basePath)) {
+      path = path.slice(basePath.length);
+    }
+    path = path.replace(/^\//, '');
     return ['rooms', 'facilities', 'employees', 'transactions'].includes(path) ? path : 'dashboard';
   });
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
@@ -76,14 +81,17 @@ export default function App() {
   useEffect(() => {
     if (user && token) {
       fetchData();
-      window.history.replaceState(null, '', `/${activeTab === 'dashboard' ? '' : activeTab}`);
+      const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+      const newPath = activeTab === 'dashboard' ? basePath || '/' : `${basePath}/${activeTab}`;
+      window.history.replaceState(null, '', newPath);
     }
   }, [activeTab, user, token]);
 
   // Not logged in
   if (!user || !token) {
-    if (window.location.pathname !== '/login') {
-      window.history.replaceState(null, '', '/login');
+    const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+    if (window.location.pathname !== `${basePath}/login` && window.location.pathname !== `${basePath}/login/`) {
+      window.history.replaceState(null, '', `${basePath}/login`);
     }
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }
